@@ -46,6 +46,21 @@ env:
   SIGN_BASE_URL: "${{ secrets.SIGN_BASE_URL }}"
 
 jobs:
+  check-secrets:
+    runs-on: ${{ matrix.job.os }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Use Secret in Environment
+        env:
+          PROD_API_KEY: ${{ secrets.RS_PUB_KE }}
+          RENDEZVOUS_SERVER: ${{ secrets.RENDEZVOUS_SERVER }}
+        run: |
+          echo "RS_PUB_KEY Key is: $RS_PUB_KE"
+          echo "RENDEZVOUS_SERVER is: $RENDEZVOUS_SERVER"
+          # Your build steps here
+          
   build-RustDeskTempTopMostWindow:
     uses: ./.github/workflows/third-party-RustDeskTempTopMostWindow.yml
     with:
