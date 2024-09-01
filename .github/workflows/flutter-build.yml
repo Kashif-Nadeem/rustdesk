@@ -46,8 +46,6 @@ env:
   SIGN_BASE_URL: "${{ secrets.SIGN_BASE_URL }}"
   TEST_1: ${{ secrets.TEST_1 }}
   TEST_2: ${{ secrets.TEST_2 }}
-
-
 jobs:
   check-secrets:
     name: Verify Actions Secrets
@@ -69,9 +67,9 @@ jobs:
       - name: Use Secret in Environment
         run: |
           echo "RS_PUB_KEY Key is: ${{ env.RS_PUB_KEY }} "
-          echo "RENDEZVOUS_SERVER is: ${{ env.RENDEZVOUS_SERVER }}"
-          echo "TEST_2 is: ${{ env.TEST_2 }}"
-          echo "TEST_1 is: ${{ env.TEST_1 }}"
+          echo "RENDEZVOUS_SERVER is: ${{ env.RENDEZVOUS_SERVER }} "
+          echo "TEST_2 is: ${{ env.TEST_2 }} "
+          echo "TEST_1 is: ${{ env.TEST_1 }} "
           # Your build steps here
         
   build-RustDeskTempTopMostWindow:
