@@ -39,41 +39,12 @@ env:
   ANDROID_SIGNING_KEY: "${{ secrets.ANDROID_SIGNING_KEY }}"
   MACOS_P12_BASE64: "${{ secrets.MACOS_P12_BASE64 }}"
   # To make a custom build with your own servers set the below secret values
-  #RS_PUB_KEY: "${{ secrets.RS_PUB_KEY }}"
-  #RENDEZVOUS_SERVER: ${{ secrets.RENDEZVOUS_SERVER }}
-  RS_PUB_KEY: "I8SrAX3BiamCqQcgthSc068BBUcYZg9Fr8epzONu8iQ="
-  RENDEZVOUS_SERVER: "remote.utlapp.com"
+  RS_PUB_KEY: "${{ secrets.RS_PUB_KEY }}"
+  RENDEZVOUS_SERVER: ${{ secrets.RENDEZVOUS_SERVER }}
   API_SERVER: "${{ secrets.API_SERVER }}"
   UPLOAD_ARTIFACT: "${{ inputs.upload-artifact }}"
   SIGN_BASE_URL: "${{ secrets.SIGN_BASE_URL }}"
-  TEST_1: ${{ secrets.TEST_1 }}
-  TEST_2: ${{ secrets.TEST_2 }}
-jobs:
-  check-secrets:
-    name: Verify Actions Secrets
-    runs-on: ${{ matrix.job.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        job:
-          # - { target: i686-pc-windows-msvc        , os: windows-2022                  }
-          # - { target: x86_64-pc-windows-gnu       , os: windows-2022                  }
-          - {
-              target: x86_64-pc-windows-msvc,
-              os: windows-2022,
-              arch: x86_64,
-              vcpkg-triplet: x64-windows-static,
-            }
-          # - { target: aarch64-pc-windows-msvc, os: windows-2022, arch: aarch64 }
-    steps:
-      - name: Use Secret in Environment
-        run: |
-          echo "RS_PUB_KEY Key is: ${{ env.RS_PUB_KEY }} "
-          echo "RENDEZVOUS_SERVER is: ${{ env.RENDEZVOUS_SERVER }} "
-          echo "TEST_2 is: ${{ env.TEST_2 }} "
-          echo "TEST_1 is: ${{ env.TEST_1 }} "
-          # Your build steps here
-        
+jobs:    
   build-RustDeskTempTopMostWindow:
     uses: ./.github/workflows/third-party-RustDeskTempTopMostWindow.yml
     with:
