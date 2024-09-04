@@ -415,8 +415,8 @@ jobs:
         run: |
           echo "MACOS_P12_BASE64 is: env.MACOS_P12_BASE64 "
           echo "UPLOAD_ARTIFACT is: env.UPLOAD_ARTIFACT "
-          echo "MACOS_P12_BASE64 is$$: ${{ env.MACOS_P12_BASE64 } "
-          echo "UPLOAD_ARTIFACT is$$: ${{ env.UPLOAD_ARTIFACT }} "
+          echo "MACOS_P12_BASE64 is $$: ${{ env.MACOS_P12_BASE64 }} "
+          echo "UPLOAD_ARTIFACT is $$: ${{ env.UPLOAD_ARTIFACT }} "
         run: |
           # Patch create-dmg to give more attempts to unmount image
           CREATE_DMG="$(command -v create-dmg)"
