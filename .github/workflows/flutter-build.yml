@@ -635,12 +635,7 @@ jobs:
 
       - name: Checkout source code
         uses: actions/checkout@v4
-
-      - name: check secret values
-        run: |
-          echo "MACOS_P12_BASE64 is: env.MACOS_P12_BASE64 "
-          echo "MACOS_P12_BASE64 $$ is: ${{ env.MACOS_P12_BASE64 }} "
-          
+        
       - name: check env.MACOS_P12_BASE64
         if: env.MACOS_P12_BASE64 != null
         run: echo "env.MACOS_P12_BASE64 is not null"
@@ -650,7 +645,8 @@ jobs:
         run: echo "$$ is not null"
           
       - name: Import the codesign cert
-        if: env.MACOS_P12_BASE64 != null
+        #if: env.MACOS_P12_BASE64 != null
+        if: ${{ env.MACOS_P12_BASE64 }} != null
         uses: apple-actions/import-codesign-certs@v1
         with:
           p12-file-base64: ${{ secrets.MACOS_P12_BASE64 }}
@@ -658,13 +654,15 @@ jobs:
           keychain: rustdesk
 
       - name: Check sign and import sign key
-        if: env.MACOS_P12_BASE64 != null
+        #if: env.MACOS_P12_BASE64 != null
+        if: ${{ env.MACOS_P12_BASE64 }} != null
         run: |
           security default-keychain -s rustdesk.keychain
           security find-identity -v
 
       - name: Import notarize key
-        if: env.MACOS_P12_BASE64 != null
+        #if: env.MACOS_P12_BASE64 != null
+        if: ${{ env.MACOS_P12_BASE64 }} != null
         uses: timheuer/base64-to-file@v1.2
         with:
           # https://gregoryszorc.com/docs/apple-codesign/stable/apple_codesign_rcodesign.html#notarizing-and-stapling
@@ -673,7 +671,8 @@ jobs:
           encodedString: ${{ secrets.MACOS_NOTARIZE_JSON }}
 
       - name: Install rcodesign tool
-        if: env.MACOS_P12_BASE64 != null
+        #if: env.MACOS_P12_BASE64 != null
+        if: ${{ env.MACOS_P12_BASE64 }} != null
         shell: bash
         run: |
           pushd /tmp
