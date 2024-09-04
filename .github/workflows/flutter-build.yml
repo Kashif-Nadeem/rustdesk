@@ -644,8 +644,8 @@ jobs:
           run: echo "env.MACOS_P12_BASE64 is not null"
           
       - name: check secret values2
-          if: ${{ env.MACOS_P12_BASE64 }} != null
-          run: echo "$$ is not null"
+        if: ${{ env.MACOS_P12_BASE64 }} != null
+        run: echo "$$ is not null"
           
       - name: Import the codesign cert
         if: env.MACOS_P12_BASE64 != null
