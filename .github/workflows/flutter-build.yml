@@ -640,6 +640,10 @@ jobs:
         run: |
           echo "MACOS_P12_BASE64 is: env.MACOS_P12_BASE64 "
           echo "MACOS_P12_BASE64 $$ is: ${{ env.MACOS_P12_BASE64 }} "
+          if: env.MACOS_P12_BASE64 != null
+          run: echo "env.MACOS_P12_BASE64 is not null"
+          if: ${{ env.MACOS_P12_BASE64 }} != null
+          run: echo "$$ is not null"
           # Your build steps here
       - name: Import the codesign cert
         if: env.MACOS_P12_BASE64 != null
