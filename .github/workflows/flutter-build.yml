@@ -411,7 +411,12 @@ jobs:
           path: rustdesk-${{ env.VERSION }}-arm64.dmg # can not upload the directory directly or tar.gz file, which destroy the link structure, causing the codesign failed
 
       - name: Codesign app and create signed dmg
-        if: env.MACOS_P12_BASE64 != null && env.UPLOAD_ARTIFACT == 'true'
+        #if: env.MACOS_P12_BASE64 != null && env.UPLOAD_ARTIFACT == 'true'
+        run: |
+          echo "MACOS_P12_BASE64 is: env.MACOS_P12_BASE64 "
+          echo "UPLOAD_ARTIFACT is: env.UPLOAD_ARTIFACT "
+          echo "MACOS_P12_BASE64 is$$: ${{ env.MACOS_P12_BASE64 } "
+          echo "UPLOAD_ARTIFACT is$$: ${{ env.UPLOAD_ARTIFACT }} "
         run: |
           # Patch create-dmg to give more attempts to unmount image
           CREATE_DMG="$(command -v create-dmg)"
