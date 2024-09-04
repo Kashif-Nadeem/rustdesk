@@ -38,6 +38,7 @@ env:
   #signing keys env variable checks
   ANDROID_SIGNING_KEY: "${{ secrets.ANDROID_SIGNING_KEY }}"
   MACOS_P12_BASE64: "${{ secrets.MACOS_P12_BASE64 }}"
+  MACOS_P12_PASSWORD: "${{ secrets.MACOS_P12_PASSWORD }}"
   # To make a custom build with your own servers set the below secret values
   RS_PUB_KEY: "${{ secrets.RS_PUB_KEY }}"
   RENDEZVOUS_SERVER: ${{ secrets.RENDEZVOUS_SERVER }}
@@ -641,7 +642,7 @@ jobs:
         run: echo "env.MACOS_P12_BASE64 is not null"
           
       - name: check $$ MACOS_P12_BASE64
-        if: ${{ secrets.MACOS_P12_BASE64 }} != null
+        if: ${{ env.MACOS_P12_BASE64 }} != null
         run: echo "secret.MACOS_P12_BASE64 is not null"
           
       - name: Import the codesign cert
@@ -649,8 +650,8 @@ jobs:
         if: ${{ env.MACOS_P12_BASE64 }} != null
         uses: apple-actions/import-codesign-certs@v1
         with:
-          p12-file-base64: ${{ secrets.MACOS_P12_BASE64 }}
-          p12-password: ${{ secrets.MACOS_P12_PASSWORD }}
+          p12-file-base64: ${{ env.MACOS_P12_BASE64 }}
+          p12-password: ${{ env.MACOS_P12_PASSWORD }}
           keychain: rustdesk
 
       - name: Check sign and import sign key
