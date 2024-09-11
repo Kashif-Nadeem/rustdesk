@@ -22,3 +22,5 @@ jobs:
     uses: ./.github/workflows/check-secrets.yml
     with:
       upload-artifact: true
+    secrets: inherit
+
