@@ -9,7 +9,26 @@ on:
       upload-tag:
         type: string
         default: "nightly"
-
+    secrets:
+      RS_PUB_KEY:
+        required: true
+      RENDEZVOUS_SERVER:
+        required: true
+      MACOS_CODESIGN_IDENTITY:
+        required: true
+      MACOS_P12_BASE64:
+        required: true
+      MACOS_P12_PASSWORD:
+        required: true
+      MACOS_NOTARIZE_JSON:
+        required: true
+      NOTORIZE_ISSUER_ID:
+        required: true
+      NOTORIZE_KEY_ID:
+        required: true
+      NOTORIZE_PRIVATE_KEY:
+        required: true
+      
 # NOTE: F-Droid builder script 'flutter/build_fdroid.sh' reads environment
 # variables from this workflow!
 #
@@ -37,15 +56,20 @@ env:
   NDK_VERSION: "r27"
   #signing keys env variable checks
   ANDROID_SIGNING_KEY: "${{ secrets.ANDROID_SIGNING_KEY }}"
+
+  ## MacOS signing variables
   MACOS_P12_BASE64: "${{ secrets.MACOS_P12_BASE64 }}"
   MACOS_P12_PASSWORD: "${{ secrets.MACOS_P12_PASSWORD }}"
+  MACOS_CODESIGN_IDENTITY: "${{ secrets.MACOS_CODESIGN_IDENTITY }}"
+  MACOS_NOTARIZE_JSON_1: "${{ secrets.MACOS_NOTARIZE_JSON_1 }}"
   # To make a custom build with your own servers set the below secret values
   RS_PUB_KEY: "${{ secrets.RS_PUB_KEY }}"
-  RENDEZVOUS_SERVER: ${{ secrets.RENDEZVOUS_SERVER }}
+  RENDEZVOUS_SERVER: "${{ secrets.RENDEZVOUS_SERVER }}"
   API_SERVER: "${{ secrets.API_SERVER }}"
   UPLOAD_ARTIFACT: "${{ inputs.upload-artifact }}"
   SIGN_BASE_URL: "${{ secrets.SIGN_BASE_URL }}"
-jobs:    
+
+jobs:
   build-RustDeskTempTopMostWindow:
     uses: ./.github/workflows/third-party-RustDeskTempTopMostWindow.yml
     with:
@@ -412,21 +436,17 @@ jobs:
           path: rustdesk-${{ env.VERSION }}-arm64.dmg # can not upload the directory directly or tar.gz file, which destroy the link structure, causing the codesign failed
 
       - name: Codesign app and create signed dmg
-        #if: env.MACOS_P12_BASE64 != null && env.UPLOAD_ARTIFACT == 'true'
+        if: env.MACOS_P12_BASE64 != null && env.UPLOAD_ARTIFACT == 'true'
         run: |
-          echo "MACOS_P12_BASE64 is: env.MACOS_P12_BASE64 "
-          echo "UPLOAD_ARTIFACT is: env.UPLOAD_ARTIFACT "
-          echo "MACOS_P12_BASE64 is $$: ${{ env.MACOS_P12_BASE64 }} "
-          echo "UPLOAD_ARTIFACT is $$: ${{ env.UPLOAD_ARTIFACT }} "
           # Patch create-dmg to give more attempts to unmount image
           CREATE_DMG="$(command -v create-dmg)"
           CREATE_DMG="$(readlink -f "$CREATE_DMG")"
           sed -i -e 's/MAXIMUM_UNMOUNTING_ATTEMPTS=3/MAXIMUM_UNMOUNTING_ATTEMPTS=7/' "$CREATE_DMG"
           # start sign the rustdesk.app and dmg
           rm -rf *.dmg || true
-          codesign --force --options runtime -s ${{ secrets.MACOS_CODESIGN_IDENTITY }} --deep --strict ./flutter/build/macos/Build/Products/Release/RustDesk.app -vvv
+          codesign --force --options runtime -s "${{ secrets.MACOS_CODESIGN_IDENTITY }}" --deep --strict ./flutter/build/macos/Build/Products/Release/RustDesk.app -vvv
           create-dmg --icon "RustDesk.app" 200 190 --hide-extension "RustDesk.app" --window-size 800 400 --app-drop-link 600 185 rustdesk-${{ env.VERSION }}.dmg ./flutter/build/macos/Build/Products/Release/RustDesk.app
-          codesign --force --options runtime -s ${{ secrets.MACOS_CODESIGN_IDENTITY }} --deep --strict rustdesk-${{ env.VERSION }}.dmg -vvv
+          codesign --force --options runtime -s "${{ secrets.MACOS_CODESIGN_IDENTITY }}" --deep --strict rustdesk-${{ env.VERSION }}.dmg -vvv
           # notarize the rustdesk-${{ env.VERSION }}.dmg
           rcodesign notary-submit --api-key-path ~/.p12/api-key.json  --staple rustdesk-${{ env.VERSION }}.dmg
 
@@ -636,43 +656,43 @@ jobs:
 
       - name: Checkout source code
         uses: actions/checkout@v4
-        
-      - name: check env.MACOS_P12_BASE64
-        if: env.MACOS_P12_BASE64 != null
-        run: echo "env.MACOS_P12_BASE64 is not null"
-          
-      - name: check $$ MACOS_P12_BASE64
-        if: ${{ env.MACOS_P12_BASE64 }} != null
-        run: echo "secret.MACOS_P12_BASE64 is not null"
-          
+
+      - name: Debug secrets
+        run: |
+          echo "P12 Base64 is set: ${{ secrets.MACOS_P12_BASE64 }} "
+          echo "MACOS_P12_PASSWORD is set: ${{ secrets.MACOS_P12_PASSWORD }} "
       - name: Import the codesign cert
-        #if: env.MACOS_P12_BASE64 != null
-        if: ${{ env.MACOS_P12_BASE64 }} != null
+        if: env.MACOS_P12_BASE64 != null
         uses: apple-actions/import-codesign-certs@v1
         with:
-          p12-file-base64: ${{ env.MACOS_P12_BASE64 }}
-          p12-password: ${{ env.MACOS_P12_PASSWORD }}
+          p12-file-base64: "${{ secrets.MACOS_P12_BASE64 }}"
+          p12-password: "${{ secrets.MACOS_P12_PASSWORD }}"
           keychain: rustdesk
 
       - name: Check sign and import sign key
-        #if: env.MACOS_P12_BASE64 != null
-        if: ${{ env.MACOS_P12_BASE64 }} != null
+        if: env.MACOS_P12_BASE64 != null
         run: |
           security default-keychain -s rustdesk.keychain
           security find-identity -v
 
+     # - name: Import notarize key
+      #  if: env.MACOS_P12_BASE64 != null
+      #  uses: timheuer/base64-to-file@v1.2
+      #  with:
+      #    # https://gregoryszorc.com/docs/apple-codesign/stable/apple_codesign_rcodesign.html#notarizing-and-stapling
+      #    fileName: rustdesk.json
+       #   fileDir: ${{ github.workspace }}
+       #   encodedString: "${{ secrets.MACOS_NOTARIZE_JSON }}"
       - name: Import notarize key
-        #if: env.MACOS_P12_BASE64 != null
-        if: ${{ env.MACOS_P12_BASE64 }} != null
-        uses: timheuer/base64-to-file@v1.2
-        with:
-          # https://gregoryszorc.com/docs/apple-codesign/stable/apple_codesign_rcodesign.html#notarizing-and-stapling
-          fileName: rustdesk.json
-          fileDir: ${{ github.workspace }}
-          encodedString: ${{ secrets.MACOS_NOTARIZE_JSON }}
+        run: |
+          echo "${{ secrets.MACOS_NOTARIZE_JSON_1 }}" > ${{ github.workspace }}/rustdesk.json
+          
+      - name: Check notarize key file content
+        run: |
+          cat ${{ github.workspace }}/rustdesk.json
+          echo "MACOS_NOTARIZE_JSON_1 Key is: ${{ secrets.MACOS_NOTARIZE_JSON_1 }}"
 
       - name: Install rcodesign tool
-        #if: env.MACOS_P12_BASE64 != null
         if: ${{ env.MACOS_P12_BASE64 }} != null
         shell: bash
         run: |
@@ -681,6 +701,12 @@ jobs:
           tar -zxvf apple-codesign-0.22.0-macos-universal.tar.gz
           mv apple-codesign-0.22.0-macos-universal/rcodesign /usr/local/bin
           popd
+
+      - name: Create key.json for notorization
+        run: |
+          echo  "${{ secrets.NOTORIZE_PRIVATE_KEY }}" >> ${{ github.workspace }}/AuthKey_UD8F7N734U.p8
+          rcodesign encode-app-store-connect-api-key -o ${{ github.workspace }}/key.json ${{ secrets.NOTORIZE_ISSUER_ID }} ${{ secrets.NOTORIZE_KEY_ID }} ${{ github.workspace }}/AuthKey_UD8F7N734U.p8
+          echo ${{ github.workspace }}/key.json
 
       - name: Install build runtime
         run: |
@@ -777,15 +803,15 @@ jobs:
           sed -i -e 's/MAXIMUM_UNMOUNTING_ATTEMPTS=3/MAXIMUM_UNMOUNTING_ATTEMPTS=7/' "$CREATE_DMG"
           # Unlock keychain
           security default-keychain -s rustdesk.keychain
-          security unlock-keychain -p ${{ secrets.MACOS_P12_PASSWORD }} rustdesk.keychain
+          security unlock-keychain -p "${{ secrets.MACOS_P12_PASSWORD }}" rustdesk.keychain
           # start sign the rustdesk.app and dmg
           rm -rf *.dmg || true
-          codesign --force --options runtime -s ${{ secrets.MACOS_CODESIGN_IDENTITY }} --deep --strict ./flutter/build/macos/Build/Products/Release/RustDesk.app -vvv
+          codesign --force --options runtime -s "${{ secrets.MACOS_CODESIGN_IDENTITY }}" --deep --strict ./flutter/build/macos/Build/Products/Release/RustDesk.app -vvv
           create-dmg --icon "RustDesk.app" 200 190 --hide-extension "RustDesk.app" --window-size 800 400 --app-drop-link 600 185 rustdesk-${{ env.VERSION }}.dmg ./flutter/build/macos/Build/Products/Release/RustDesk.app
-          codesign --force --options runtime -s ${{ secrets.MACOS_CODESIGN_IDENTITY }} --deep --strict rustdesk-${{ env.VERSION }}.dmg -vvv
+          codesign --force --options runtime -s "${{ secrets.MACOS_CODESIGN_IDENTITY }}" --deep --strict rustdesk-${{ env.VERSION }}.dmg -vvv
           # notarize the rustdesk-${{ env.VERSION }}.dmg
-          rcodesign notary-submit --api-key-path ${{ github.workspace }}/rustdesk.json  --staple rustdesk-${{ env.VERSION }}.dmg
-
+          #rcodesign notary-submit --api-key-path ${{ github.workspace }}/rustdesk.json  --staple rustdesk-${{ env.VERSION }}.dmg
+          rcodesign notary-submit --api-key-path "${{ secrets.MACOS_NOTARIZE_JSON_1 }}"  --staple rustdesk-${{ env.VERSION }}.dmg
       - name: Rename rustdesk
         if: env.UPLOAD_ARTIFACT == 'true'
         run: |
@@ -1984,7 +2010,7 @@ jobs:
             flatpak/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}${{ matrix.job.suffix }}.flatpak
 
   build-rustdesk-web:
-    if: True
+    if: False
     name: build-rustdesk-web
     runs-on: ubuntu-20.04
     strategy:
@@ -2011,7 +2037,7 @@ jobs:
       - name: Build web
         shell: bash
         run: |
-          pushd flutter/web/v1/js
+          pushd flutter/web/js
           npm install yarn -g
           npm install typescript -g
           npm install protoc -g
